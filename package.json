@@ -7,12 +7,10 @@
     "test": "test"
   },
   "dependencies": {
+    "es5-shim": "^4.0.3",
+    "es6-shim": "^0.19.2",
     "gulp": "^3.8.8",
-    "gulp-concat": "^2.4.1",
-    "gulp-util": "^3.0.1",
     "pegjs": "^0.8.0",
-    "shelljs": "^0.3.0",
-    "gulp-peg": "^0.1.2"
   },
   "devDependencies": {
     "gulp-mocha": "^1.1.1",

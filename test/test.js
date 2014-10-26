@@ -1,48 +1,66 @@
+require('es5-shim')
+require('es6-shim')
+require('./../shim/array-contains-shim.js')
 var assert = require('assert')
 	, should = require('should')
 	, peg = require("pegjs")
     , fs = require("fs")
 	, grammar = fs.readFileSync("./src/8086.pegjs").toString()
-    , parser = peg.buildParser(grammar)
+    , parser = peg.buildParser(grammar, {startRule:"out", allowedStartRules: ["out","memoryAddress"]})
     , a = function() {
-    	return parser.parse.apply(parser, arguments).toUpperCase();
+    	return parser.parse.apply(parser, arguments).map(function(str) { 
+    		return str.toUpperCase(); 
+    	}).join("");
     }
 
-describe('Parse', function(){
+// Fix for parser obj not really being available within PegJS Actions
+global.getParse = function getPEGjsParse() {
+    return function(toParse, startRule) {
+    	return parser.parse(toParse, {startRule:startRule});
+    }
+}
+
+describe('PEGjs 8086 Assembler', function(){
   describe('#MOV', function(){
-    it('should correctly parse MOV', function(){
-
-		a("mov ah,0x42").should.containEql("B4")
-		a("mov al,0x42").should.containEql("B0")
-		a("mov bl,0x42").should.containEql("B3")
-		a("mov ch,0x42").should.containEql("B5")
-		a("mov cl,0x42").should.containEql("B1")
-		a("mov bh,0x42").should.containEql("B7")
-		a("mov dh,0x42").should.containEql("B6")
-		a("mov dl,0x42").should.containEql("B2")
-		a("mov bp,0x1337").should.containEql("BD")
-		a("mov bx,0x1337").should.containEql("BB")
-		a("mov cx,0x1337").should.containEql("B9")
-		a("mov di,0x1337").should.containEql("BF")
-		a("mov dx,0x1337").should.containEql("BA")
-		a("mov si,0x1337").should.containEql("BE")
-		a("mov sp,0x1337").should.containEql("BC")
-		a("mov ax,0x1337").should.containEql("B8")
-		a("mov al,[0x1337]").should.containEql("A0")
-		a("mov ax,[0x1337]").should.containEql("A1")
-		a("mov [0x1337],AL").should.containEql("A2")
-		a("mov [0x1337],AX").should.containEql("A3")
-		a("mov [0x1337],DS").should.containEql("8C")
-		a("mov ds,[0x1337]").should.containEql("8E")
-		a("mov bl,[0x1337]").should.containEql("8A")
-		a("mov [0x1337],BL").should.containEql("88")
-		a("mov [0x1337],BX").should.containEql("89")
-		a("mov bx,[0x1337]").should.containEql("8B")
-		// a("mov byte [0x1337],0x42").should.containEql("C6")
-		// a("mov word [0x1337],0x1337").should.containEql("C6")
-		// a("mov byte [0x1337],0x42").should.containEql("C7")
-		// a("mov word [0x1337],0x1337").should.containEql("C7")
-
+    it('should compile test instructions', function(){
+		var code = {
+			"B442":         "mov ah,0x42",
+			"B042":         "mov al,0x42",
+			"B342":         "mov bl,0x42",
+			"B542":         "mov ch,0x42",
+			"B142":         "mov cl,0x42",
+			"B742":         "mov bh,0x42",
+			"B642":         "mov dh,0x42",
+			"B242":         "mov dl,0x42",
+			"BD3713":       "mov bp,0x1337",
+			"BB3713":       "mov bx,0x1337",
+			"B93713":       "mov cx,0x1337",
+			"BF3713":       "mov di,0x1337",
+			"BA3713":       "mov dx,0x1337",
+			"BE3713":       "mov si,0x1337",
+			"BC3713":       "mov sp,0x1337",
+			"B83713":       "mov ax,0x1337",
+			"A03713":       "mov al,[0x1337]",
+			"8A07":         "mov al,[bx]",
+			"A13713":       "mov ax,[0x1337]",
+			"A23713":       "mov [0x1337],al",
+			"A33713":       "mov [0x1337],ax",
+			"8C1E3713":     "mov [0x1337],ds",
+			"8E1E3713":     "mov ds,[0x1337]",
+			"8A1E3713":     "mov bl,[0x1337]",
+			"881E3713":     "mov [0x1337],bl",
+			"891E3713":     "mov [0x1337],bx",
+			"8B1E3713":     "mov bx,[0x1337]",
+			"C606371342":   "mov byte [0x1337],0x42",
+			"C70637133713": "mov word [0x1337],0x1337",
+			"C606371342":   "mov byte [0x1337],0x42",
+			"C70637133713": "mov word [0x1337],0x1337",
+		}
+		for(testMachineCode in code) {
+			var asm = code[testMachineCode]
+				, genMachineCode = a(asm)
+			genMachineCode.should.be.equal(testMachineCode)
+		}
     })
   })
 })

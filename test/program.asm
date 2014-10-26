@@ -14,7 +14,9 @@ mov dx,0x1337
 mov si,0x1337
 mov sp,0x1337
 mov ax,0x1337
+mov al,[0x42]
 mov al,[0x1337]
+mov ax,[0x42] ; check insertion of memory as word always
 mov ax,[0x1337]
 mov [0x1337],AL
 mov [0x1337],AX
